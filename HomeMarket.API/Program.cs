@@ -1,3 +1,7 @@
+using HomeMarket.API.Context;
+using HomeMarket.API.Managers;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -7,6 +11,12 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    options.UseInMemoryDatabase("AppDbContext");
+});
+builder.Services.AddScoped<IRoomManager,RoomManager>();
+builder.Services.AddScoped<IHomeManager,HomeManager>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
