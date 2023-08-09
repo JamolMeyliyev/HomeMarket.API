@@ -8,7 +8,6 @@ using HomeMarket.API.Models.UpdateModel;
 using Microsoft.EntityFrameworkCore;
 
 namespace HomeMarket.API.Managers;
-
 public class HomeManager : IHomeManager
 {
     private readonly AppDbContext _context;
@@ -19,20 +18,22 @@ public class HomeManager : IHomeManager
 
     public async Task<HomeModel> CreateHome(CreateHomeModel model)
     {
+       var price = 600 * model.Area *(((float)model.Type + 1F) / 6 + 1);
         var home = new Home()
         {
+            
             Rooms = new List<Room>(),
-            Price = 0,
+            Price = price,
             Area = model.Area,
-            EmptyArea = model.Area
+            Type= model.Type,
+            EmptyArea = model.Area,
+            Dagree = (model.Area * ((int)model.Type +1))/30
         };
+
         _context.Homes.Add(home);
         await _context.SaveChangesAsync();
         return home.ToModel();
-
     }
-
-    
 
     public async Task<List<HomeModel>> GetAllHome(HomeFilter homeFilter)
     {
@@ -63,13 +64,14 @@ public class HomeManager : IHomeManager
             query = query.Where(h => h.Price <= homeFilter.ToPrice);
         }
         var hooms = await query.Select(h => h.ToModel()).ToListAsync();
+
         return hooms;
 
     }
 
     public async Task<Home> GetHomeByHomeId(Guid homeId)
     {
-       var home = await _context.Homes.FirstOrDefaultAsync(h => h.Id == homeId);
+       var home = await _context.Homes.Where(h => h.Id == homeId).Include(h => h.Rooms).FirstOrDefaultAsync();
        if(home == null)
         {
             throw new NotFoundException($"{homeId}");
@@ -79,7 +81,7 @@ public class HomeManager : IHomeManager
 
     public async Task<HomeModel> GetHomeModelByHomeId(Guid homeId)
     {
-        var home = await _context.Homes.FirstOrDefaultAsync(h => h.Id == homeId);
+        var home = await _context.Homes.Where(h => h.Id == homeId).Include(h => h.Rooms).FirstOrDefaultAsync();
         if(home is null)
         {
             throw new NotFoundException($"{homeId}");
@@ -89,8 +91,8 @@ public class HomeManager : IHomeManager
 
     public async Task<HomeModel> UpdateHome(Home home, UpdateHomeModel model)
     {
-        home.Area = model.Area ?? home.Area;
-        home.Type = model.Type ?? home.Type;
+        
+        
         if(model.Area != null)
         {
 
@@ -102,17 +104,19 @@ public class HomeManager : IHomeManager
             {
                 throw new Exception("Siz uy yer maydoni maksimal qisqartirdingiz sizda endi xona qo'shish imkoniyati mavjud emas");
             }
-            if(home.Area - home.EmptyArea > (float)model.Area && home.Area - home.EmptyArea > (float)model.Area + 2F )
-            {
-                throw new Exception("Sizda 2mkv dan kamroq ortiqcha joy qolmoqda ");
-            }
+
+            home.Dagree = home.Dagree - (home.Area * ((int)home.Type + 1)) / 30;
+            home.Type = model.Type ?? home.Type;
+            home.EmptyArea =(float)model.Area - home.Area + home.EmptyArea;
+            home.Area = model.Area ?? home.Area;
+            home.Dagree = home.Dagree + (home.Area * ((int)home.Type + 1)) / 30;
+            home.Price = 600 * home.Area * (((float)home.Type + 1F) / 6 + 1);
         }
-
-
+        
        
-        _context.Homes.Update(home);
-        await _context.SaveChangesAsync();
-        return home.ToModel();
+         _context.Homes.Update(home);
+         await _context.SaveChangesAsync();
+         return home.ToModel();
 
     }
 
@@ -124,13 +128,12 @@ public class HomeManager : IHomeManager
 
     public async Task<HomeModel> AddRoomByHomeId(Home home, Room room)
     {
-        if(home.EmptyArea< room.Width * room.Length)
-        {
-            throw new Exception("xona hajmini qisqartiring!!!");
-        }
-        home.EmptyArea = home.EmptyArea - room.Width * room.Length;
-        home.Rooms.Add(room);
-        await _context.SaveChangesAsync();
+       
+            home.EmptyArea = home.EmptyArea - room.Width * room.Length;
+            home.Rooms.Add(room);
+            await _context.SaveChangesAsync();
+        
+        
         return home.ToModel();
     }
 }

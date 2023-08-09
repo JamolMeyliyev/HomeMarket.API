@@ -18,10 +18,23 @@ public class RoomManager : IRoomManager
     }
     public  async Task<RoomModel> CreateRoom(Guid homeId, CreateRoomModel model)
     {
+        var home = await _context.Homes.Include(h => h.Rooms).FirstOrDefaultAsync(h => h.Id == homeId);
+        if (home == null)
+        {
+            throw new NotFoundException("Home");
+        }
+        if (home.EmptyArea < model.Width * model.Length)
+        {
+            throw new Exception("xona hajmini qisqartiring!!!");
+
+        }
+
+        home.Dagree = home.Dagree + ((int)model.ComfortType + 1) *(float)(home.Rooms.Count+1) * model.Length * model.Length/(20*(home.Rooms.Count+3));
+        home.EmptyArea = home.EmptyArea - model.Width * model.Length;
+
         var room = new Room()
         {
             HomeId= homeId,
-            Type = model.Type,
             ComfortType= model.ComfortType,
             Width= model.Width,
             Length= model.Length,
@@ -42,10 +55,7 @@ public class RoomManager : IRoomManager
 
         var query = _context.Rooms.AsQueryable();
         query  = query.Where(r => r.HomeId == homeId);
-        if(filter.Type is not null)
-        {
-            query = query.Where(s => s.Type.ToString().Contains(filter.Type));
-        }
+        
         if (filter.ComfortType is not null)
         {
             query = query.Where(s => s.ComfortType.ToString().Contains(filter.ComfortType));
@@ -83,7 +93,7 @@ public class RoomManager : IRoomManager
 
     public async Task<RoomModel> UpdateRoom(Room room,UpdateRoomModel model)
     {
-        room.Type = model.Type ?? room.Type;
+        
         room.ComfortType = model.ComfortType ?? room.ComfortType;
         room.Width = model.Width ?? room.Width;
         room.Length = model.Length ?? room.Length;
