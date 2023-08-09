@@ -17,6 +17,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 builder.Services.AddScoped<IRoomManager,RoomManager>();
 builder.Services.AddScoped<IHomeManager,HomeManager>();
+builder.Services.AddScoped<IUserManager,UserManager>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

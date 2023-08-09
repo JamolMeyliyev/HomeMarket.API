@@ -35,9 +35,9 @@ namespace HomeMarket.API.Controllers
         {
             try
             {   var roomModel  = await _roomManager.CreateRoom(homeId,model);
-                var room = await _roomManager.GetRoomByRoomId(homeId,roomModel.Id); 
-                var home = await _homeManager.GetHomeByHomeId(homeId);
-                await _homeManager.AddRoomByHomeId(home, room);
+                //var room = await _roomManager.GetRoomByRoomId(homeId, roomModel.Id);
+                //var home = await _homeManager.GetHomeByHomeId(homeId);
+                //await _homeManager.AddRoomByHomeId(home, room);
                 return Ok(roomModel);
             }
             catch (Exception ex)
